@@ -1,86 +1,105 @@
 from langchain_chroma import Chroma
-from langchain_cohere import CohereEmbeddings 
+from langchain_cohere import CohereEmbeddings
 from langchain_ollama import ChatOllama
-import gradio as gr 
-import os 
+import os
+import streamlit as st
+from dotenv import load_dotenv
+import re
 
-# import env file 
-from dotenv import load_dotenv 
+# Load environment variables
 load_dotenv()
+COHERE_API_KEY = os.getenv("COHERE_API_KEY")
 
-# configuration 
-DATA_PATH = r'data'
-CHROMA_PATH = r'chroma_db'
+# Configuration
+DATA_PATH = "data"
+CHROMA_PATH = "chroma_db"
+NUM_RESULTS = 3
 
-# initialize the embedding model 
+# Initialize embedding model
 embedding = CohereEmbeddings(
-    cohere_api_key=os.getenv('COHERE_API_KEY'), 
+    cohere_api_key=COHERE_API_KEY,
     model='embed-multilingual-v3.0'
 )
 
-# initialize the chat model 
+# Initialize LLM
 llm = ChatOllama(
     model='qwen3:0.6b',
-    temperature=0.7, 
+    temperature=0.7,
     num_predict=512,
 )
 
-# connect to database 
+# Connect to Chroma DB
 vector_store = Chroma(
-    collection_name='vcc_env',
+    collection_name="vcc_env",
     embedding_function=embedding,
     persist_directory=CHROMA_PATH
 )
 
-# Set up vector store 
-num_results = 3
 retriever = vector_store.as_retriever(
     search_type='similarity',
-    search_kwargs={
-        'k': num_results,
-    }
+    search_kwargs={'k': NUM_RESULTS}
 )
 
-# call this function for every message added to the chatbot
-def stream_response(message, history):
-    # retrieve relavant chunks according to the message 
-    docs = retriever.invoke(message)
-    knowledge = ''
-    for doc in docs:
-        knowledge += doc.page_content + '\n'
+def remove_think_tags(text):
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
-    # call LLM 
-    if message is not None: 
-        partial_message = ""
+# Streamlit UI setup
+st.set_page_config(page_title="RAG Chatbot", layout="wide")
+st.title("🤖 RAG Chatbot with Ollama + Cohere")
 
-        rag_prompt = f"""
-        You are an assistent which answers questions based on knowledge which is provided to you.
-        While answering, you don't use your internal knowledge, 
-        but solely the information in the "The knowledge" section.
-        You don't mention anything to the user about the povided knowledge.
+# Initialize session state
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
-        The question: {message}
-
-        Conversation history: {history}
-
-        The knowledge: {knowledge}
-
-        """
-
-        print(rag_prompt)
+for msg in st.session_state.chat_history:
+    with st.chat_message("user"):
+        st.markdown(msg["user"])
+    with st.chat_message("assistant"):
+        st.markdown(msg["assistant"])
         
-        # stream the response to the Gradio app 
-        for response in llm.stream(rag_prompt):
-            partial_message += response.content
-            yield partial_message
-          
-# gradio chatbot interface 
-chatbot = gr.ChatInterface(
-    stream_response,
-    textbox=gr.Textbox(placeholder="Send a message...",
-    autoscroll=True, 
-    scale=7),
-    title="VCC Environment Chatbot",
-)
+# Chat input box
+user_input = st.chat_input("Hãy hỏi tôi về Viettel Construction...")
 
-chatbot.launch()
+if user_input:
+    # Show user message
+    st.chat_message("user").markdown(user_input)
+
+    # Retrieve knowledge
+    docs = retriever.invoke(user_input)
+    knowledge = "\n".join(doc.page_content for doc in docs)
+
+    # Build RAG prompt
+    rag_prompt = f"""
+You are an assistant that answers questions based only on the provided knowledge.
+Do not use prior knowledge or mention the source information.
+Use only the content from the section "The knowledge".
+
+The question: {user_input}
+
+Conversation history: {st.session_state.chat_history}
+
+The knowledge: {knowledge}
+"""
+
+    print(rag_prompt)
+    
+    # Display assistant message with streaming
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        partial_message = ""
+        cleaned_message = ""
+
+        try:
+            for chunk in llm.stream(rag_prompt):
+                partial_message += chunk.content
+                cleaned_message = remove_think_tags(partial_message)
+                placeholder.markdown(cleaned_message)
+                
+        except Exception as e:
+            placeholder.markdown(f"❌ Lỗi: {e}")
+
+    # Save conversation to history
+    st.session_state.chat_history.append({
+        "user": user_input,
+        "assistant": cleaned_message
+    })
