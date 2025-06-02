@@ -90,10 +90,17 @@ The knowledge: {knowledge}
         cleaned_message = ""
 
         try:
+            thinking = False
             for chunk in llm.stream(rag_prompt):
+                if "<think>" in chunk.content:
+                    thinking = True
+                elif "</think>" in chunk.content:
+                    thinking = False
+                    continue
+                if thinking == True:
+                    continue
                 partial_message += chunk.content
-                cleaned_message = remove_think_tags(partial_message)
-                placeholder.markdown(cleaned_message)
+                placeholder.markdown(partial_message)
                 
         except Exception as e:
             placeholder.markdown(f"❌ Lỗi: {e}")
