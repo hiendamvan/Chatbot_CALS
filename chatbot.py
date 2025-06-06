@@ -1,10 +1,10 @@
+import os
+import re
+import streamlit as st
 from langchain_chroma import Chroma
 from langchain_cohere import CohereEmbeddings
 from langchain_ollama import ChatOllama
-import os
-import streamlit as st
 from dotenv import load_dotenv
-import re
 
 # Load environment variables
 load_dotenv()
