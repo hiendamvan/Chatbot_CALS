@@ -7,6 +7,7 @@ import os
 import json 
 import pdfplumber 
 from docx import Document 
+import win32com.client as win32
 
 def process_docx(file_path):
     if not os.path.exists(file_path):
@@ -60,6 +61,54 @@ def process_pdf(file_path):
             if page_number == 1: 
                 break
 
+def convert_doc_to_docx(doc_path):
+    """
+    Chuyển đổi một file .doc thành .docx bằng cách sử dụng Microsoft Word.
+    Yêu cầu: Chạy trên Windows và có cài đặt MS Word.
+    """
+    # Tạo một đường dẫn tuyệt đối để Word có thể tìm thấy file
+    doc_path_abs = os.path.abspath(doc_path)
+    docx_path_abs = doc_path_abs + 'x'
+
+    # Kiểm tra nếu file .docx đã tồn tại thì không cần convert nữa
+    if os.path.exists(docx_path_abs):
+        print(f"File .docx đã tồn tại: {docx_path_abs}")
+        return docx_path_abs
+
+    try:
+        # Khởi tạo ứng dụng Word
+        word = win32.gencache.EnsureDispatch('Word.Application')
+        word.Visible = False # Chạy ẩn
+
+        # Mở file .doc
+        doc = word.Documents.Open(doc_path_abs)
+        
+        # Lưu file sang định dạng .docx (wdFormatXMLDocument = 12)
+        doc.SaveAs(docx_path_abs, FileFormat=12)
+        doc.Close()
+        word.Quit()
+        
+        print(f"Đã chuyển đổi thành công: {docx_path_abs}")
+        return docx_path_abs
+    except Exception as e:
+        print(f"Lỗi khi chuyển đổi file {doc_path}: {e}")
+        # Đảm bảo Word được đóng lại nếu có lỗi
+        if 'word' in locals() and word is not None:
+            word.Quit()
+        return None
+
+def process_doc(file_path):
+    """
+    Hàm xử lý file .doc bằng cách chuyển nó sang .docx rồi xử lý.
+    """
+    print(f"Phát hiện file .doc, đang tiến hành chuyển đổi: {file_path}")
+    docx_path = convert_doc_to_docx(file_path)
+    
+    if docx_path:
+        # After converting, process the .docx file
+        print("--- Bắt đầu xử lý file .docx vừa được chuyển đổi ---")
+        process_docx(docx_path)
+        
 
 with open('data/document-list.json', 'r', encoding='utf-8') as f: 
     data = json.load(f)
@@ -74,7 +123,7 @@ for doc in documents:
         file_title = attach["title"]
         file_path = file_path.replace("/home/ctct_hdqt_owner/qltt_web_8882/Upload/QLTT", "data/QLTT_1")
         print(f"Tệp: {file_title} | Đường dẫn: {file_path}")
-        if file_path.lower().endswith('.docx') == True: 
-            process_docx(file_path)
-            print("------------------------------------------")
+        if file_path.lower().endswith('.doc') == True: 
+            process_doc(file_path)
+            break
     break
