@@ -3,6 +3,7 @@ import os
 import pdfplumber 
 import pandas as pd 
 import win32com.client as win32
+import fitz
 
 def process_docx(file_path):
     if not os.path.exists(file_path):
@@ -34,7 +35,7 @@ def process_docx(file_path):
             table_dfs.append(df)
             
     return text, table_dfs
-    
+
 def process_pdf(file_path):
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
@@ -43,29 +44,35 @@ def process_pdf(file_path):
     all_text = ""
     all_tables = []
 
-    with pdfplumber.open(file_path) as pdf:
-        for page_number, page in enumerate(pdf.pages):
-            # Trích xuất text từ trang
-            text = page.extract_text()
-            if text:
-                all_text += text + "\n"
+    doc = fitz.open(file_path)
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
 
-            # Trích xuất bảng từ trang
-            raw_tables = page.extract_tables()
-            for table in raw_tables:
-                if not table:
-                    continue
-                # Kiểm tra và làm sạch bảng
-                cleaned_table = [[cell.strip() if cell else "" for cell in row] for row in table]
-                if cleaned_table:
-                    header = cleaned_table[0]
-                    if all(header):
-                        df = pd.DataFrame(cleaned_table[1:], columns=header)
-                    else:
-                        col_count = len(header)
-                        columns = [f"Column {i+1}" for i in range(col_count)]
-                        df = pd.DataFrame(cleaned_table, columns=columns)
-                    all_tables.append(df)
+        # Trích xuất text dạng blocks (để dễ nhận biết bảng qua blocks dạng lưới)
+        blocks = page.get_text("blocks")  # List of (x0, y0, x1, y1, "text", block_no, block_type)
+
+        # Ghép tất cả text lại
+        page_text = page.get_text()
+        all_text += page_text + "\n"
+
+        # Đơn giản lọc các block nghi là bảng bằng heuristic: block có nhiều dòng, nhiều cột (dựa vào dấu tab hoặc khoảng cách)
+        # Đây là heuristic đơn giản, bạn có thể tùy chỉnh thêm.
+        for b in blocks:
+            text = b[4]
+            lines = text.split('\n')
+            if len(lines) > 2 and any('\t' in line for line in lines):
+                # Nếu phát hiện tab (tab-delimited) thì tạm coi là bảng
+                # Chuyển text bảng thành DataFrame
+                rows = [line.split('\t') for line in lines]
+                max_cols = max(len(r) for r in rows)
+                # Nếu hàng đầu tiên có thể là header nếu tất cả ô không rỗng
+                header = rows[0]
+                if all(header):
+                    df = pd.DataFrame(rows[1:], columns=header)
+                else:
+                    columns = [f"Column {i+1}" for i in range(max_cols)]
+                    df = pd.DataFrame(rows, columns=columns)
+                all_tables.append(df)
 
     return all_text.strip(), all_tables
 

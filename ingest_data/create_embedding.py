@@ -1,5 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_cohere import CohereEmbeddings
+from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from uuid import uuid4
 import os
@@ -27,29 +28,36 @@ vector_store = Chroma(
 def create_embedding(text, tables):
     ''''
     This function will: 
-        1. Split the into chunks 
-        2. Create unique IDs for each chunk
-        3. Add the chunks to the vector store
+        1. Split the text into chunks 
+        2. Summarize chunks and tables
+        3. Create unique IDs for each chunk
+        4. Add the chunks to the vector store
     '''
-    docs = text_splitter.split_text(text)
-
+    # Step 1: Split the text into chunks
+    docs = [Document(page_content=text)]
     # create the chunk 
     chunks = text_splitter.split_documents(docs)
 
-    text_summaries = []
+    # Step 2: Summarize the text and tables 
+    summary_chunks = []
     for chunk in chunks:
-        # summarize the chunk
-        summary = summarize(chunk.page_content)
-        text_summaries.append(summary)
+        summary_text = summarize(chunk.page_content)
+        summary_doc = Document(
+            page_content=summary_text,
+            metadata={"source":"text_summary"}
+        )
+        summary_chunks.append(summary_doc)
     
-    tables_summaries = []
     for table in tables:
-        # summarize the table
-        summary = summarize(table.to_string())
-        tables_summaries.append(summary)
-        
+        summary_text = summarize(table.to_string())
+        summary_doc = Document(
+            page_content=summary_text,
+            metadata={"source":"text_summary"}
+        )
+        summary_chunks.append(summary_doc)
+    
     # create unique ID's
-    uuids = [str(uuid4()) for _ in range(len(chunks))]
+    uuids = [str(uuid4()) for _ in range(len(summary_chunks))]
 
     # add chunks to the vector store 
-    vector_store.add_documents(documents=chunks, ids=uuids)
+    vector_store.add_documents(documents=summary_chunks, ids=uuids)
