@@ -8,58 +8,72 @@ import json
 import pdfplumber 
 from docx import Document 
 import win32com.client as win32
+import pandas as pd
 
 def process_docx(file_path):
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
         return 
     
+    text = ""
     doc = Document(file_path)
     for para in doc.paragraphs:
         # Extract text from paragraphs
-        text = para.text.strip()
-        if text:
-            print(f'Paragraph: {text}')
-        else:
-            print("Empty paragraph found.")
-        
-    # Extract tables from the document 
-    for table_idx, table in enumerate(doc.tables, start=1):
-        print(f"\n🔹 Table {table_idx}:")
+        text += para.text.strip()
+    
+    table_dfs = []
+    for table in doc.tables:
+        data = []
         for row in table.rows:
             row_data = [cell.text.strip() for cell in row.cells]
-            print(row_data)
-        
-        if table_idx == 1:
-            break
+            data.append(row_data)
+    
+        # Gán header nếu đủ điều kiện, ngược lại dùng số cột để đặt tên cột
+        if data:
+            header = data[0]
+            if all(header):  # Nếu tất cả cột đầu tiên có tiêu đề
+                df = pd.DataFrame(data[1:], columns=header)
+            else:
+                col_count = len(header)
+                columns = [f"Column {i+1}" for i in range(col_count)]
+                df = pd.DataFrame(data, columns=columns)
+            table_dfs.append(df)
+            
+    return text, table_dfs
     
 def process_pdf(file_path):
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
-        return 
-    
+        return None, None
+
+    all_text = ""
+    all_tables = []
+
     with pdfplumber.open(file_path) as pdf:
         for page_number, page in enumerate(pdf.pages):
-            # Extract text from each page 
+            # Trích xuất text từ trang
             text = page.extract_text()
             if text:
-                print(f"Text length of page {page_number + 1}: {len(text)}.")
-                #print(f"Page {page_number + 1} content:\n{text}\n")
-            else:
-                print(f"Page {page_number + 1} is empty or could not be read.")
-            
-            # Extract tables from each page
-            tables = page.extract_tables()
-            if tables:
-                for table_idx, table in enumerate(tables, start=1):
-                    print(f"\n🔹 Table {table_idx}:")
-                    for row in table:
-                        print(row)
-            else:
-                print("None of table.")
-            
-            if page_number == 1: 
-                break
+                all_text += text + "\n"
+
+            # Trích xuất bảng từ trang
+            raw_tables = page.extract_tables()
+            for table in raw_tables:
+                if not table:
+                    continue
+                # Kiểm tra và làm sạch bảng
+                cleaned_table = [[cell.strip() if cell else "" for cell in row] for row in table]
+                if cleaned_table:
+                    header = cleaned_table[0]
+                    if all(header):
+                        df = pd.DataFrame(cleaned_table[1:], columns=header)
+                    else:
+                        col_count = len(header)
+                        columns = [f"Column {i+1}" for i in range(col_count)]
+                        df = pd.DataFrame(cleaned_table, columns=columns)
+                    all_tables.append(df)
+
+    return all_text.strip(), all_tables
 
 def convert_doc_to_docx(doc_path):
     """
@@ -107,7 +121,7 @@ def process_doc(file_path):
     if docx_path:
         # After converting, process the .docx file
         print("--- Bắt đầu xử lý file .docx vừa được chuyển đổi ---")
-        process_docx(docx_path)
+        return process_docx(docx_path)
         
 
 with open('data/document-list.json', 'r', encoding='utf-8') as f: 
@@ -123,7 +137,10 @@ for doc in documents:
         file_title = attach["title"]
         file_path = file_path.replace("/home/ctct_hdqt_owner/qltt_web_8882/Upload/QLTT", "data/QLTT_1")
         print(f"Tệp: {file_title} | Đường dẫn: {file_path}")
-        if file_path.lower().endswith('.doc') == True: 
-            process_doc(file_path)
-            break
+        if file_path.lower().endswith('.pdf') == True: 
+            text, tables = process_pdf(file_path)
+        elif file_path.lower().endswith('.docx') == True: 
+            text, tables = process_docx(file_path)
+        elif file_path.lower().endswith('.doc') == True:
+            text, tables = process_doc(file_path)
     break
