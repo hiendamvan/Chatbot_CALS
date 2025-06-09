@@ -1,14 +1,8 @@
-from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_cohere import CohereEmbeddings
-from langchain_chroma import Chroma
-from uuid import uuid4
-import os
-import json 
-import pdfplumber 
 from docx import Document 
+import os
+import pdfplumber 
+import pandas as pd 
 import win32com.client as win32
-import pandas as pd
 
 def process_docx(file_path):
     if not os.path.exists(file_path):
@@ -123,24 +117,3 @@ def process_doc(file_path):
         print("--- Bắt đầu xử lý file .docx vừa được chuyển đổi ---")
         return process_docx(docx_path)
         
-
-with open('data/document-list.json', 'r', encoding='utf-8') as f: 
-    data = json.load(f)
-    
-documents = data["contents"]
-print(len(documents))
-
-for doc in documents:
-    print(f"--- {doc['mediaTitle']} ---")
-    for attach in doc.get("attachmentList", []):
-        file_path = attach["url"]
-        file_title = attach["title"]
-        file_path = file_path.replace("/home/ctct_hdqt_owner/qltt_web_8882/Upload/QLTT", "data/QLTT_1")
-        print(f"Tệp: {file_title} | Đường dẫn: {file_path}")
-        if file_path.lower().endswith('.pdf') == True: 
-            text, tables = process_pdf(file_path)
-        elif file_path.lower().endswith('.docx') == True: 
-            text, tables = process_docx(file_path)
-        elif file_path.lower().endswith('.doc') == True:
-            text, tables = process_doc(file_path)
-    break
