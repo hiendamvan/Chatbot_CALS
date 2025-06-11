@@ -45,36 +45,11 @@ def process_pdf(file_path):
     all_tables = []
 
     doc = fitz.open(file_path)
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
+    for page in doc: 
+        # Extract text from each page
+        all_text += page.get_text()
 
-        # Trích xuất text dạng blocks (để dễ nhận biết bảng qua blocks dạng lưới)
-        blocks = page.get_text("blocks")  # List of (x0, y0, x1, y1, "text", block_no, block_type)
-
-        # Ghép tất cả text lại
-        page_text = page.get_text()
-        all_text += page_text + "\n"
-
-        # Đơn giản lọc các block nghi là bảng bằng heuristic: block có nhiều dòng, nhiều cột (dựa vào dấu tab hoặc khoảng cách)
-        # Đây là heuristic đơn giản, bạn có thể tùy chỉnh thêm.
-        for b in blocks:
-            text = b[4]
-            lines = text.split('\n')
-            if len(lines) > 2 and any('\t' in line for line in lines):
-                # Nếu phát hiện tab (tab-delimited) thì tạm coi là bảng
-                # Chuyển text bảng thành DataFrame
-                rows = [line.split('\t') for line in lines]
-                max_cols = max(len(r) for r in rows)
-                # Nếu hàng đầu tiên có thể là header nếu tất cả ô không rỗng
-                header = rows[0]
-                if all(header):
-                    df = pd.DataFrame(rows[1:], columns=header)
-                else:
-                    columns = [f"Column {i+1}" for i in range(max_cols)]
-                    df = pd.DataFrame(rows, columns=columns)
-                all_tables.append(df)
-
-    return all_text.strip(), all_tables
+    return all_text, all_tables
 
 def convert_doc_to_docx(doc_path):
     """

@@ -18,17 +18,16 @@ for doc in documents:
         file_title = attach["title"]
         file_path = file_path.replace("/home/ctct_hdqt_owner/qltt_web_8882/Upload/QLTT", "data/QLTT_1")
         print(f"Tệp: {file_title} | Đường dẫn: {file_path}")
-        # if file_path.lower().endswith('.pdf') == True: 
-        #     text, tables = process_pdf(file_path)
+        if file_path.lower().endswith('.pdf') == True: 
+            text, tables = process_pdf(file_path)
+            create_embedding(text, tables)
+            break
+        # if file_path.lower().endswith('.docx') == True: 
+        #     text, tables = process_docx(file_path)
+        #     print(text)
         #     print(tables)
         #     create_embedding(text, tables)
         #     break
-        if file_path.lower().endswith('.docx') == True: 
-            text, tables = process_docx(file_path)
-            print(text)
-            print(tables)
-            create_embedding(text, tables)
-            break
         # elif file_path.lower().endswith('.doc') == True:
         #     text, tables = process_doc(file_path)
         #     create_embedding(text, tables)

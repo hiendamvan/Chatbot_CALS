@@ -36,9 +36,11 @@ def create_embedding(text, tables):
     # Step 1: Split the text into chunks
     docs = [Document(page_content=text)]
     # create the chunk 
+    print("Splitting text into chunks...")
     chunks = text_splitter.split_documents(docs)
 
     # Step 2: Summarize the text and tables 
+    print("Summarizing chunks and tables...")
     summary_chunks = []
     for chunk in chunks:
         summary_text = summarize(chunk.page_content)
@@ -60,4 +62,5 @@ def create_embedding(text, tables):
     uuids = [str(uuid4()) for _ in range(len(summary_chunks))]
 
     # add chunks to the vector store 
+    print("Adding documents to the vector store...")
     vector_store.add_documents(documents=summary_chunks, ids=uuids)
