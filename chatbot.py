@@ -1,14 +1,10 @@
-import os
-import re
-import streamlit as st
-from langchain_chroma import Chroma
 from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from dotenv import load_dotenv
-os.environ["STREAMLIT_SERVER_RUN_ON_SAVE"] = "false"
-# Load environment variables
-load_dotenv()
-COHERE_API_KEY = os.getenv("COHERE_API_KEY")
+import streamlit as st
+import os
+import re
 
 # Configuration
 DATA_PATH = "data"
