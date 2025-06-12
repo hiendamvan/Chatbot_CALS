@@ -2,10 +2,10 @@ import os
 import re
 import streamlit as st
 from langchain_chroma import Chroma
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
-
+os.environ["STREAMLIT_SERVER_RUN_ON_SAVE"] = "false"
 # Load environment variables
 load_dotenv()
 COHERE_API_KEY = os.getenv("COHERE_API_KEY")
@@ -21,10 +21,8 @@ embedding = HuggingFaceEmbeddings(
 )
 
 # Initialize LLM
-llm = ChatOllama(
-    model='qwen3:0.6b',
-    temperature=0.7,
-    num_predict=512,
+llm = ChatOpenAI(
+    model='gpt-4.1-nano'
 )
 
 # Connect to Chroma DB

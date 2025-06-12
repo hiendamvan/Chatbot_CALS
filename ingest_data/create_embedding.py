@@ -5,7 +5,6 @@ from langchain_chroma import Chroma
 from uuid import uuid4
 import os
 
-
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
     chunk_overlap=200,
@@ -14,7 +13,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 
 embedding = HuggingFaceEmbeddings(
-    model_name="intfloat/multilingual-e5-small"
+    model_name="intfloat/multilingual-e5-small",
 )
 
 vector_store = Chroma(
