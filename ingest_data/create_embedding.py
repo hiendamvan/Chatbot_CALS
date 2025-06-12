@@ -1,11 +1,10 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_cohere import CohereEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings 
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from uuid import uuid4
 import os
 
-from summary import summarize
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
@@ -14,9 +13,8 @@ text_splitter = RecursiveCharacterTextSplitter(
     is_separator_regex=False,
 )
 
-embedding = CohereEmbeddings(
-    cohere_api_key=os.getenv('COHERE_API_KEY'), 
-    model='embed-multilingual-v3.0'
+embedding = HuggingFaceEmbeddings(
+    model_name="intfloat/multilingual-e5-small"
 )
 
 vector_store = Chroma(
@@ -39,28 +37,28 @@ def create_embedding(text, tables):
     print("Splitting text into chunks...")
     chunks = text_splitter.split_documents(docs)
 
-    # Step 2: Summarize the text and tables 
-    print("Summarizing chunks and tables...")
-    summary_chunks = []
-    for chunk in chunks:
-        summary_text = summarize(chunk.page_content)
-        summary_doc = Document(
-            page_content=summary_text,
-            metadata={"source":"text_summary"}
-        )
-        summary_chunks.append(summary_doc)
+    # # Step 2: Summarize the text and tables 
+    # print("Summarizing chunks and tables...")
+    # summary_chunks = []
+    # for chunk in chunks:
+    #     summary_text = summarize(chunk.page_content)
+    #     summary_doc = Document(
+    #         page_content=summary_text,
+    #         metadata={"source":"text_summary"}
+    #     )
+    #     summary_chunks.append(summary_doc)
     
-    for table in tables:
-        summary_text = summarize(table.to_string())
-        summary_doc = Document(
-            page_content=summary_text,
-            metadata={"source":"text_summary"}
-        )
-        summary_chunks.append(summary_doc)
+    # for table in tables:
+    #     summary_text = summarize(table.to_string())
+    #     summary_doc = Document(
+    #         page_content=summary_text,
+    #         metadata={"source":"text_summary"}
+    #     )
+    #     summary_chunks.append(summary_doc)
     
     # create unique ID's
-    uuids = [str(uuid4()) for _ in range(len(summary_chunks))]
+    uuids = [str(uuid4()) for _ in range(len(chunks))]
 
     # add chunks to the vector store 
     print("Adding documents to the vector store...")
-    vector_store.add_documents(documents=summary_chunks, ids=uuids)
+    vector_store.add_documents(documents=chunks, ids=uuids)

@@ -2,8 +2,8 @@ import os
 import re
 import streamlit as st
 from langchain_chroma import Chroma
-from langchain_cohere import CohereEmbeddings
 from langchain_ollama import ChatOllama
+from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -16,9 +16,8 @@ CHROMA_PATH = "chroma_db"
 NUM_RESULTS = 3
 
 # Initialize embedding model
-embedding = CohereEmbeddings(
-    cohere_api_key=COHERE_API_KEY,
-    model='embed-multilingual-v3.0'
+embedding = HuggingFaceEmbeddings(
+    model_name="intfloat/multilingual-e5-small",
 )
 
 # Initialize LLM
@@ -45,7 +44,7 @@ def remove_think_tags(text):
 
 # Streamlit UI setup
 st.set_page_config(page_title="RAG Chatbot", layout="wide")
-st.title("🤖 RAG Chatbot with Ollama + Cohere")
+st.title("🤖 RAG Chatbot with Ollama + HuggingFace")
 
 # Initialize session state
 if "chat_history" not in st.session_state:
