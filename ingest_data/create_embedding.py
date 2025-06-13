@@ -3,7 +3,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
 from uuid import uuid4
-import os
+import pickle
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
@@ -22,7 +22,7 @@ vector_store = Chroma(
     persist_directory='chroma_db'
 )
 
-def create_embedding(text, tables):
+def create_embedding(text, tables, metadata=None):
     ''''
     This function will: 
         1. Split the text into chunks 
@@ -35,6 +35,15 @@ def create_embedding(text, tables):
     # create the chunk 
     print("Splitting text into chunks...")
     chunks = text_splitter.split_documents(docs)
+    
+    # add metadata to each chunk
+    if metadata:
+        for chunk in chunks:
+            chunk.metadata = metadata
+    
+    # Save chunks to a file for BM25 retriever
+    with open("data/chunks.pkl", "wb") as f:
+        pickle.dump(chunks, f)
 
     # # Step 2: Summarize the text and tables 
     # print("Summarizing chunks and tables...")
