@@ -15,7 +15,7 @@ load_dotenv()
 CHROMA_PATH = "chroma_db"
 NUM_RESULTS = 3
 
-# Initialize components
+# Initialize embedding and llm 
 embedding = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-small")
 llm = ChatOpenAI(model="gpt-4.1-nano")
 
@@ -30,10 +30,6 @@ app = FastAPI(title="RAG Chatbot API")
 class ChatRequest(BaseModel):
     question: str
     history: Optional[List[dict]] = []
-
-# Helper: remove <think> tags
-def remove_think_tags(text: str) -> str:
-    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
@@ -58,29 +54,14 @@ The knowledge: {knowledge}
 """
 
     try:
-        # Streaming not supported in standard FastAPI response, so aggregate response
-        partial_message = ""
-        thinking = False
-
-        for chunk in llm.stream(rag_prompt):
-            if "<think>" in chunk.content:
-                thinking = True
-            elif "</think>" in chunk.content:
-                thinking = False
-                continue
-            if thinking:
-                continue
-            partial_message += chunk.content
-
-        cleaned_message = remove_think_tags(partial_message)
-
+        # get the response from the llm 
+        response = llm.invoke(rag_prompt)
         # Append to history
-        history.append({"user": question, "assistant": cleaned_message})
+        history.append({"user": question, "assistant": response.content})
 
         return {
-            "answer": cleaned_message,
+            "answer": response.content,
             "history": history
         }
-
     except Exception as e:
         return {"error": str(e)}
