@@ -16,26 +16,42 @@ with st.form(key="chat_form", clear_on_submit=True):
     user_query = st.text_input("💬 Ask a question:")
     submit_button = st.form_submit_button("Send")
 
-# Send query to FastAPI
+# Display chat history
+if st.session_state.history:
+    st.subheader("🧠 Chat History")
+    for msg in st.session_state.history:
+        st.markdown(f"**🧑 You:** {msg['user']}")
+        st.markdown(f"**🤖 Assistant:** {msg['assistant']}")
+
 if submit_button and user_query:
     try:
-        response = requests.post(
+        with requests.post(
             API_URL,
-            json={"question": user_query, "history": st.session_state.history}
-        )
-        data = response.json()
+            json={"question": user_query, "history": st.session_state.history},
+            stream=True,
+            timeout=60
+        ) as response:
+            if response.status_code != 200:
+                st.error(f"❌ Error: {response.text}")
+            else:
+                # Display user query
+                st.markdown(f"**🧑 You:** {user_query}")
 
-        if "answer" in data:
-            # Update history
-            st.session_state.history = data["history"]
+                # Display assistant response in real-time
+                assistant_placeholder = st.empty()
+                full_response = ""
 
-            # Display full chat
-            st.subheader("🧠 Chat History")
-            for msg in reversed(st.session_state.history):
-                st.markdown(f"**🧑 You:** {msg['user']}")
-                st.markdown(f"**🤖 Assistant:** {msg['assistant']}")
-        else:
-            st.error(f"❌ Error: {data.get('error', 'Unknown error')}")
+                for chunk in response.iter_lines(decode_unicode=True):
+                    if chunk:
+                        full_response += chunk + "\n"
+                        assistant_placeholder.markdown(f"**🤖 Assistant:** {full_response}", unsafe_allow_html=True)
+
+                # Update chat history
+                st.session_state.history.append({
+                    "user": user_query,
+                    "assistant": full_response
+                })
+
     except Exception as e:
         st.error(f"❌ Exception occurred: {str(e)}")
 
