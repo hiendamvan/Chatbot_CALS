@@ -1,7 +1,5 @@
 from docx import Document 
 import os
-import pdfplumber 
-import pandas as pd 
 import win32com.client as win32
 import fitz
 
@@ -16,40 +14,20 @@ def process_docx(file_path):
         # Extract text from paragraphs
         text += para.text.strip()
     
-    table_dfs = []
-    for table in doc.tables:
-        data = []
-        for row in table.rows:
-            row_data = [cell.text.strip() for cell in row.cells]
-            data.append(row_data)
-    
-        # Gán header nếu đủ điều kiện, ngược lại dùng số cột để đặt tên cột
-        if data:
-            header = data[0]
-            if all(header):  # Nếu tất cả cột đầu tiên có tiêu đề
-                df = pd.DataFrame(data[1:], columns=header)
-            else:
-                col_count = len(header)
-                columns = [f"Column {i+1}" for i in range(col_count)]
-                df = pd.DataFrame(data, columns=columns)
-            table_dfs.append(df)
-            
-    return text, table_dfs
+    return text
 
 def process_pdf(file_path):
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
         return None, None
-
     all_text = ""
-    all_tables = []
-
+    
     doc = fitz.open(file_path)
     for page in doc: 
         # Extract text from each page
         all_text += page.get_text()
 
-    return all_text, all_tables
+    return all_text
 
 def convert_doc_to_docx(doc_path):
     """

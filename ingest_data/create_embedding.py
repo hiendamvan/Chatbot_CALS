@@ -22,7 +22,7 @@ vector_store = Chroma(
     persist_directory='chroma_db'
 )
 
-def create_embedding(text, tables, metadata=None):
+def create_embedding(text, metadata=None):
     ''''
     This function will: 
         1. Split the text into chunks 
