@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import config
 
-API_URL = "http://127.0.0.1:8000/chat"
+API_URL = config.API_URL
 
 # Streamlit UI setup
 st.set_page_config(page_title="AI-Powered Knowledge Assistant", page_icon="🤖", layout="wide")

@@ -10,17 +10,17 @@ from typing import List, Optional
 from dotenv import load_dotenv
 import pickle
 import asyncio
+import config
 
 # Load environment variables
 load_dotenv()
-
 # Constants
-CHROMA_PATH = "chroma_db"
-NUM_RESULTS = 6
+CHROMA_PATH = config.CHROMA_PATH
+NUM_RESULTS = config.NUM_RESULTS
 
 # Initialize embedding and llm 
-embedding = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-small")
-llm = ChatOpenAI(model="gpt-4.1-nano")
+embedding = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
+llm = ChatOpenAI(model=config.LLM_MODEL)
 
 # Create hybrid retriever 
 with open("data/chunks.pkl", 'rb') as f:
@@ -28,7 +28,7 @@ with open("data/chunks.pkl", 'rb') as f:
 
 bm25_retriever = BM25Retriever.from_documents(
     chunks, embedding_function=embedding)
-bm25_retriever.k = 3
+bm25_retriever.k = NUM_RESULTS 
 
 vector_store = Chroma(
     collection_name="vcc_env",
@@ -37,7 +37,7 @@ vector_store = Chroma(
 )
 dense_retriever = vector_store.as_retriever(
     search_type="similarity",
-    search_kwargs={"k": 3}
+    search_kwargs={"k": NUM_RESULTS}
 )
 
 retriever = EnsembleRetriever(
@@ -85,10 +85,9 @@ The knowledge: {knowledge}
             async for chunk in llm.astream(rag_prompt):
                 if hasattr(chunk, "content") and chunk.content:
                     content = chunk.content
-                    print(repr(content))  # DEBUG
                     full_response += content
                     yield content
-                    await asyncio.sleep(0.02)
+                    await asyncio.sleep(0.06)
             history.append({"user": question, "assistant": full_response})
         except Exception as e:
             yield f"\n[Error: {str(e)}]"
