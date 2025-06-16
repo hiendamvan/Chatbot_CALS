@@ -14,7 +14,7 @@ cnt = 0
 cnt_doc = 0
 cnt_pdf = 0
 cnt_docx = 0 
-start_index = 537
+start_index = 790
 current_index = 0
 
 for doc in documents:

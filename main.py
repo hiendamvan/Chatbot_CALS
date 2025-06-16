@@ -1,8 +1,10 @@
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
+from langchain_cohere import CohereRerank
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
 from fastapi.responses import StreamingResponse
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -46,6 +48,9 @@ retriever = EnsembleRetriever(
     return_source_documents=True
 )
 
+# Add reranking
+reranker = CohereRerank(model='rerank-v3.5')
+
 # FastAPI app
 app = FastAPI(title="RAG Chatbot API")
 
@@ -61,10 +66,13 @@ async def chat(request: ChatRequest):
 
     # Retrieve documents
     docs = retriever.invoke(question)
-    # You can optionally remove duplicate docs here if needed
-
+    
+    # We keep 4 results from 8 retrieved documents
+    reranked_results = reranker.rerank(query=question, documents=docs, top_n=4)
+    reranked_docs = [docs[item['index']] for item in reranked_results]
+    
     # Combine knowledge base content
-    knowledge = "\n".join(doc.page_content for doc in docs)
+    knowledge = "\n".join(doc.page_content for doc in reranked_docs)
 
     # Format RAG prompt
     rag_prompt = f"""
