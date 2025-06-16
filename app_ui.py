@@ -63,7 +63,7 @@ if submit_button and user_query:
 
                             for chunk in response.iter_lines(decode_unicode=True):
                                 if chunk:
-                                    full_response += chunk
+                                    full_response += chunk + "\n"
                                     assistant_placeholder.markdown(
                                         f"**🤖 Assistant:** {full_response.strip()}",
                                         unsafe_allow_html=True

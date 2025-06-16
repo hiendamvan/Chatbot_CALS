@@ -1,16 +1,7 @@
 # agents/simple_rag.py
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.retrievers import BM25Retriever
-from langchain.retrievers import EnsembleRetriever
-from langchain_cohere import CohereRerank
-from langchain_openai import ChatOpenAI
-from langchain_chroma import Chroma
 from fastapi.responses import StreamingResponse
-from typing import List, Optional
-from dotenv import load_dotenv
-import pickle
+from typing import List
 import asyncio
-import config
 
 
 # Hàm xử lý câu hỏi factual

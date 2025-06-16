@@ -1,6 +1,6 @@
 from agents.classify import classify_question
 from agents.simple_rag import simple_rag
-
+from agents.multihop import multihop 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import EnsembleRetriever
@@ -8,7 +8,6 @@ from langchain_cohere import CohereRerank
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma
 from typing import List, Optional
-
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -77,7 +76,7 @@ async def chat(request: ChatRequest):
     if category == "simple":
         return await simple_rag(question, history, retriever, reranker, llm)
     elif category == "multi-hop":
-        return await simple_rag(question, history, retriever, reranker, llm)
+        return await multihop(question, history, retriever, reranker, llm)
     elif category == "greeting":
         return {"response": "Hello! How can I assist you today?"}
     
