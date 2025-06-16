@@ -3,3 +3,4 @@ venv/
 chroma_db/
 data/
 ingest_data/__pycache__/
+agents/__pycache__/

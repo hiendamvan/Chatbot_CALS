@@ -1,5 +1,5 @@
 # app UI
-API_URL = "http://127.0.0.1:8000/chat"
+API_URL = "http://127.0.0.1:8000"
 
 # API  
 CHROMA_PATH = "chroma_db"
