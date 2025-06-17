@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import config
 import pickle
+import os
 
 # Load environment variables
 load_dotenv()
@@ -26,7 +27,9 @@ embedding = HuggingFaceEmbeddings(model_name=config.EMBEDDING_MODEL)
 llm = ChatOpenAI(model=config.LLM_MODEL)
 
 # Create hybrid retriever 
-with open("data/chunks.pkl", 'rb') as f:
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # -> Chatbot_CALS/
+CHUNKS_PATH = os.path.join(BASE_DIR, "data", "chunks.pkl")
+with open(CHUNKS_PATH, 'rb') as f:
     chunks = pickle.load(f)
 
 bm25_retriever = BM25Retriever.from_documents(
