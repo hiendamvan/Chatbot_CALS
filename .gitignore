@@ -6,3 +6,5 @@ ingest_data/__pycache__/
 agents/__pycache__/
 tests/__pycache__/
 .pytest_cache/
+src/__pycache__/
+__pycache__
