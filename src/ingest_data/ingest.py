@@ -57,14 +57,3 @@ for doc in documents:
             cnt_doc += 1
             # text, tables = process_doc(file_path)
             # create_embedding(text, tables, metadata=metadata)
-
-# text, tables = process_pdf("data/QLTT_1/2025/01/02/CD9DBAE7AA59551D3E8234C6696A56F5.pdf")
-# print(len(text))
-# # write to a file
-# with open("data/processed_text.txt", "w", encoding="utf-8") as f:
-#     f.write(text)
-
-# Total documents: 876
-# Total PDF files: 665
-# Total DOCX files: 113
-# Total DOC files: 33

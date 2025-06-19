@@ -41,8 +41,10 @@ async def multihop(question: str, history: List[dict], retriever, reranker, llm)
         docs = retriever.invoke(current_query)
         reranked_results = reranker.rerank(query=current_query, documents=docs, top_n=config.NUM_RESULTS-1)
         reranked_docs = [docs[item["index"]] for item in reranked_results]
+        
         # for i, doc in enumerate(reranked_docs):
         #     print(f"Doc {i+1} for hop {hop+1}: {doc.page_content[:200]}...")
+
         knowledge = "\n".join(doc.page_content for doc in reranked_docs)
 
         # Step 2: Decide whether we need a sub-question
