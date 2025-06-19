@@ -1,7 +1,8 @@
 .env
 venv/
 chroma_db/
-data/
+data/QLTT_1
+data/document-list.json
 ingest_data/__pycache__/
 agents/__pycache__/
 tests/__pycache__/
