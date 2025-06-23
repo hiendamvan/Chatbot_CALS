@@ -1,4 +1,4 @@
-![Chatbot CALS](CALS.png)'
+![Chatbot CALS](multiagent_chatbot.png)'
 
 TODO: Multiagent RAG chatbot 
 1. Agent classify câu hỏi
